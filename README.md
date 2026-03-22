@@ -22,20 +22,9 @@ The Long Road (Episodes 1-2)
 
 Pinec Multimedia Station IDs and Bumps
 
-🚀 How to Run
 
-Download the index.html file.
+![pinecstation99](https://github.com/user-attachments/assets/4c0bb5e3-60e6-470d-bae0-51c3a410a0ed)
 
-Open it in any modern web browser.
 
-Click the "TURN ON TV" button to start the broadcast.
-
-🛠️ Built With
-
-HTML5 / CSS3
-
-Vanilla JavaScript (No frameworks required)
-
-SVG for high-quality retro logos
 
 Created for the Pinec Multimedia community.
