@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PineStation99 | PTV</title>
+    <style>
+        /* =========================================
+           AESTHETICS & LAYOUT
+           ========================================= */
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #12100e;
+            background-image: radial-gradient(circle at 50% 40%, #2a221b 0%, #0c0908 80%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Courier New', Courier, monospace;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .desk-surface {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 18vh;
+            background: linear-gradient(to bottom, #1f1813 0%, #0a0806 100%);
+            border-top: 4px solid #30261e;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.8);
+            z-index: 0;
+        }
+
+        .ambient-light {
+            position: absolute;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60vw;
+            height: 60vh;
+            background: radial-gradient(ellipse at center, rgba(168, 230, 207, 0.03) 0%, rgba(0,0,0,0) 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* =========================================
+           CRT TV CASING
+           ========================================= */
+        .tv-housing {
+            position: relative;
+            background: #232426;
+            padding: 3vw;
+            padding-bottom: 4vw;
+            border-radius: 2vw;
+            box-shadow: 
+                inset 0px 5px 15px rgba(255,255,255,0.05),
+                inset 0px -5px 20px rgba(0,0,0,0.5),
+                0px 20px 40px rgba(0,0,0,0.9),
+                0px 5px 15px rgba(0,0,0,0.7);
+            border: 2px solid #1a1a1c;
+            z-index: 10;
+            width: 90vw;
+            max-width: 800px;
+        }
+
+        .tv-housing::after {
+            content: '';
+            position: absolute;
+            bottom: 1.5vw;
+            right: 4vw;
+            width: 6vw;
+            height: 1vw;
+            background: repeating-linear-gradient(90deg, #111, #111 2px, #232426 3px, #232426 6px);
+            opacity: 0.6;
+        }
+
+        .power-led {
+            position: absolute;
+            bottom: 1.8vw;
+            left: 4vw;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #ff3b30;
+            box-shadow: 0 0 10px #ff3b30;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+        .power-led.on {
+            background-color: #4ade80;
+            box-shadow: 0 0 15px #4ade80;
+        }
+
+        .brand-text {
+            position: absolute;
+            bottom: 1.5vw;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #555;
+            font-size: 0.9rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.8), -1px -1px 0px rgba(255,255,255,0.1);
+        }
+
+        /* =========================================
+           CRT SCREEN
+           ========================================= */
+        .screen-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            background-color: #050605;
+            border-radius: 50% / 5%;
+            overflow: hidden;
+            box-shadow: inset 0 0 3vw rgba(0,0,0,1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .screen-inner {
+            position: absolute;
+            top: 2%; left: 2%; right: 2%; bottom: 2%;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #000;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: brightness(1.1) contrast(1.2) saturate(0.9);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        video.playing {
+            opacity: 1;
+        }
+
+        #noise-canvas {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+        #noise-canvas.active {
+            opacity: 0.15;
+        }
+        #noise-canvas.loud {
+            opacity: 0.8;
+        }
+
+        /* =========================================
+           CRT OVERLAYS & EFFECTS
+           ========================================= */
+        
+        .crt-bezel {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 30;
+            pointer-events: none;
+            background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA4MDAgNjAwIiBwcmVzZXJ2ZUFzcGVjdFJhdGlvPSJub25lIj48cGF0aCBkPSJNMAswdjYwMGg4MDBWMFpNNDAsNDBRNDAwLDAgNzYwLDQwUTgwMCwzMDAgNzYwLDU2MFE0MDAsNjAwIDQwLDU2MFEwLDMwMCA0MCw0MFoiIGZpbGw9IiMxYTFhMWMiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjxwYXRoIGQ9Ik00MCw0MFE0MDAsMCA3NjAsNDBRODAwLDMwMCA3NjAsNTYwUTQwMCw2MDAgNDAsNTYwUTAsMzAwIDQwLDQwWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSJyZ2JhKDI1NSwyNTUsMjU1LDAuMDUpIiBzdHJva2Utd2lkdGg9IjUiLz48cGF0aCBkPSJNNDAsNDBRNDAwLDAgNzYwLDQwUTgwMCwzMDAgNzYwLDU2MFE0MDAsNjAwIDQwLDU2MFEwLDMwMCA0MCw0MFoiIGZpbGw9Im5vbmUiIHN0cm9rZT0icmdiYSgwLDAsMCwwLjkpIiBzdHJva2Utd2lkdGg9IjQwIiBmaWx0ZXI9ImJsdXIoOHB4KSIvPjwvc3ZnPg==');
+            background-size: 100% 100%;
+        }
+
+        .scanlines {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
+            background-size: 100% 4px;
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .phosphor-glow {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0) 50%, rgba(0,0,0,0.6) 100%);
+            box-shadow: inset 0 0 40px rgba(100, 255, 150, 0.1);
+            z-index: 25;
+            pointer-events: none;
+            mix-blend-mode: multiply;
+        }
+
+        .flicker {
+            animation: crt-flicker 0.15s infinite;
+        }
+        @keyframes crt-flicker {
+            0% { opacity: 0.98; }
+            50% { opacity: 0.95; }
+            100% { opacity: 0.99; }
+        }
+
+        /* =========================================
+           ON-SCREEN DISPLAY (OSD) & UI
+           ========================================= */
+        .osd-text {
+            position: absolute;
+            top: 10%;
+            left: 8%;
+            color: #4ade80;
+            font-size: 3vw;
+            font-weight: bold;
+            text-shadow: 0 0 10px #4ade80, 2px 2px 0px rgba(0,0,0,0.8);
+            z-index: 40;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            white-space: pre-line;
+        }
+
+        .station-logo {
+            position: absolute;
+            bottom: 8%;
+            right: 8%;
+            width: 12vw;
+            max-width: 80px;
+            z-index: 40;
+            opacity: 0.7;
+            pointer-events: none;
+            filter: drop-shadow(0 0 5px rgba(74, 222, 128, 0.5));
+        }
+
+        #power-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            backdrop-filter: blur(4px);
+        }
+        .btn-power {
+            background: #232426;
+            color: #ff3b30;
+            border: 3px solid #ff3b30;
+            padding: 20px 40px;
+            font-family: inherit;
+            font-size: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            text-shadow: 0 0 5px #ff3b30;
+            box-shadow: 0 0 20px rgba(255, 59, 48, 0.4);
+            transition: all 0.2s;
+            animation: pulse-btn 2s infinite;
+        }
+        .btn-power:hover {
+            background: #ff3b30;
+            color: #111;
+            box-shadow: 0 0 30px rgba(255, 59, 48, 0.8);
+        }
+        @keyframes pulse-btn {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        #flash-effect {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #fff;
+            z-index: 90;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        @media (min-width: 850px) {
+            .osd-text { font-size: 24px; }
+            .station-logo { width: 80px; }
+            .tv-housing { padding: 25px; padding-bottom: 35px; border-radius: 15px; }
+            .power-led { bottom: 15px; left: 30px; }
+            .brand-text { bottom: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-light"></div>
+    <div class="desk-surface"></div>
+
+    <div class="tv-housing">
+        <div class="power-led" id="power-led"></div>
+        <div class="brand-text">PinecVision</div>
+        
+        <div class="screen-container">
+            <div class="screen-inner flicker">
+                <video id="tv-player" playsinline></video>
+                <canvas id="noise-canvas"></canvas>
+                <div class="osd-text" id="osd"></div>
+                <img class="station-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iNTAiPjx0ZXh0IHg9IjUiIHk9IjM1IiBmb250LWZhbWlseT0iQ291cmllciBOZXciIGZvbnQtc2l6ZT0iMzAiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjNGFkZTgwIj5QVFY8L3RleHQ+PC9zdmc+" alt="PTV Logo">
+            </div>
+
+            <div class="phosphor-glow"></div>
+            <div class="scanlines"></div>
+            <div class="crt-bezel"></div>
+            <div id="flash-effect"></div>
+
+            <div id="power-overlay">
+                <button class="btn-power" id="btn-power">TURN ON TV</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const playlist = {
+            sections: {
+                episodes: [
+                    { title: "Ep: 01 Metal Tiger X: Jaguar Protocol", url: "https://files.catbox.moe/aq2kdx.mp4" },
+                    { title: "Ep: 02 Metal Tiger X: Jaguar Protocol", url: "https://files.catbox.moe/ohoalc.mp4" },
+                    { title: "Ep: 03 Metal Tiger X: Jaguar Protocol", url: "https://files.catbox.moe/lz6dsq.mp4" },
+                    { title: "Ep: 04 Metal Tiger X: Jaguar Protocol", url: "https://files.catbox.moe/56yn70.mp4" },
+                    { title: "Ep: 05 Metal Tiger X: Jaguar Protocol", url: "https://files.catbox.moe/drn5ro.mp4" },
+                    { title: "Ep: 06 Metal Tiger X: Jaguar Protocol", url: "https://files.catbox.moe/nje22j.mp4" },
+                    { title: "Ep: 07 Metal Tiger X: Jaguar Protocol", url: "https://files.catbox.moe/4sp0gj.mp4" },
+                    { title: "Ep: 01 The Long Road", url: "https://files.catbox.moe/untfml.mp4" },
+                    { title: "Ep: 02 The Long Road", url: "https://files.catbox.moe/pwm43m.mp4" }
+                ],
+                bumps: [
+                    { title: "PINEC MULTIMEDIA - CH1", url: "https://files.catbox.moe/nd1aon.mp4" }
+                ]
+            }
+        };
+
+        const videoPlayer = document.getElementById('tv-player');
+        const osdText = document.getElementById('osd');
+        const btnPower = document.getElementById('btn-power');
+        const powerOverlay = document.getElementById('power-overlay');
+        const led = document.getElementById('power-led');
+        const flash = document.getElementById('flash-effect');
+        const noiseCanvas = document.getElementById('noise-canvas');
+        const ctx = noiseCanvas.getContext('2d');
+
+        let isTvOn = false;
+        let episodeIndex = 0;
+        let forceBumpNext = false;
+
+        function resizeCanvas() {
+            noiseCanvas.width = noiseCanvas.clientWidth || 400;
+            noiseCanvas.height = noiseCanvas.clientHeight || 300;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function generateStatic() {
+            if (!isTvOn) return;
+            const w = noiseCanvas.width;
+            const h = noiseCanvas.height;
+            const idata = ctx.createImageData(w, h);
+            const buffer32 = new Uint32Array(idata.data.buffer);
+            for (let i = 0; i < buffer32.length; i++) {
+                buffer32[i] = 0xff000000 | ((Math.random() * 255) | 0) * 0x010101;
+            }
+            ctx.putImageData(idata, 0, 0);
+            requestAnimationFrame(generateStatic);
+        }
+
+        function showOSD(text, duration = 3000) {
+            osdText.innerText = text;
+            osdText.style.opacity = 1;
+            setTimeout(() => { osdText.style.opacity = 0; }, duration);
+        }
+
+        function setStatic(level) {
+            if (level === 'loud') {
+                noiseCanvas.className = 'loud active';
+                videoPlayer.classList.remove('playing');
+            } else if (level === 'soft') {
+                noiseCanvas.className = 'active';
+                videoPlayer.classList.add('playing');
+            } else {
+                noiseCanvas.className = '';
+                videoPlayer.classList.add('playing');
+            }
+        }
+
+        btnPower.addEventListener('click', () => {
+            isTvOn = true;
+            powerOverlay.style.display = 'none';
+            led.classList.add('on');
+            flash.style.opacity = 1;
+            setTimeout(() => { flash.style.opacity = 0; }, 150);
+            generateStatic();
+            setStatic('loud');
+            setTimeout(() => playNextVideo(), 1000);
+        });
+
+        function playNextVideo() {
+            const { episodes, bumps } = playlist.sections;
+            let videoData;
+
+            // Get next video in sequence
+            const nextEp = episodes[episodeIndex % episodes.length];
+            
+            // Logic to play a bump before the start of "The Long Road" series
+            // Checks if next video is Ep 1 of Long Road and we haven't played the forced bump yet
+            if (nextEp.title === "Ep: 01 The Long Road" && !forceBumpNext) {
+                videoData = bumps[0]; 
+                forceBumpNext = true; 
+            } else {
+                videoData = nextEp;
+                episodeIndex++;
+                forceBumpNext = false; 
+            }
+
+            videoPlayer.src = videoData.url;
+            videoPlayer.load();
+
+            setTimeout(() => {
+                videoPlayer.play()
+                    .then(() => {
+                        setStatic('soft');
+                        showOSD("PLAY ►\n" + videoData.title);
+                    })
+                    .catch(() => handleVideoError(videoData));
+            }, 600);
+        }
+
+        videoPlayer.addEventListener('ended', () => playNextVideo());
+
+        function handleVideoError(videoData) {
+            setStatic('loud');
+            showOSD("SIGNAL LOST\n" + (videoData.title || "CHECK TAPE"), 4000);
+            setTimeout(() => playNextVideo(), 4000);
+        }
+    </script>
+</body>
+</html>
